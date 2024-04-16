@@ -1,0 +1,52 @@
+install.packages("readxl")
+
+# Replace with the correct path to your Excel file
+file_path <- "C:/Users/Maximilian Peter/Desktop/Masterarbeit/SEC_Data.xlsx"
+
+# If you want to read a sheet by its name, you can do
+GrossProfit <- read_excel(file_path, sheet = "GrossProfit")
+StockholdersEquity <- read_excel(file_path, sheet = "StockholdersEquity")
+
+
+# Check the first few rows of the data frame
+head(data)
+
+# Make sure that 'start' or 'end' column is in Date format and not character
+GrossProfit$start <- as.Date(GrossProfit$start)
+StockholdersEquity$start <- as.Date(StockholdersEquity$start)
+
+# Convert 'val' columns to numeric if they are not already
+GrossProfit$val <- as.numeric(GrossProfit$val)
+StockholdersEquity$val <- as.numeric(StockholdersEquity$val)
+
+# Merge datasets by the common date column
+merged_data <- merge(GrossProfit, StockholdersEquity, by = "end", all = TRUE)
+
+# Run a linear regression with GrossProfit as the predictor and StockholdersEquity as the response variable
+linear_model <- lm(val.y ~ val.x, data = merged_data)
+# val.x is GrossProfit and val.y is StockholdersEquity in the merged_data dataframe
+
+Adjusted_val.y <- merged_data$val.y/1000000000
+Adjusted_val.x <- merged_data$val.x/1000000000
+
+plot(Adjusted_val.y ~ Adjusted_val.x, data = merged_data,
+     main = "Verhältnis: StockholdersEquity/GrossProfit",
+     xlab = "GrossProfit",
+     ylab = "StockholdersEquity")
+
+
+# gibt es einen zusamenhand zwischen GrossProfit und StockholdersEquity. Führe einen t-Test durch.
+t.test(Adjusted_val.y ~ Adjusted_val.x, data = merged_data)
+
+
+
+
+
+
+# Get a summary of the linear regression model
+summary(linear_model)
+
+
+# Plot diagnostic plots for the linear regression model
+par(mfrow = c(2, 2))  # Arrange plots in a 2x2 grid
+plot(linear_model)
