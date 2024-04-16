@@ -1,45 +1,72 @@
 import json
+import matplotlib.pyplot as plt
 
 # Replace 'file_path' with the path to your JSON file
-with open('C:/Users/Maximilian Peter/PycharmProjects/pythonProject/Test/CIK0000320193.json', 'r') as file:
+with open('C:/Users/Maximilian Peter/Desktop/Test/CIK0000320193.json', 'r') as file:
     data = json.load(file)
 
 print(data.keys())  # Prints the top-level keys
 
 import pandas as pd
 
-# This is assuming you want to extract the 'EntityCommonStockSharesOutstanding' part of the JSON
-shares_outstanding = pd.json_normalize(data,
-                                       record_path=['facts', 'dei', 'EntityCommonStockSharesOutstanding', 'units', 'shares'])
+# Define a function to extract and plot data
 
-Total_Assets = pd.json_normalize(data,
-                                       record_path=['facts', 'us-gaap', 'Assets', 'units', 'USD'])
+def extract_and_plot(metric_key):
+    metric_path = ['facts', 'us-gaap', metric_key, 'units', 'USD']
+    metric_data = pd.json_normalize(data, record_path=metric_path)
 
-# Convert the 'end' field to datetime to allow time-series analysis
-shares_outstanding['end'] = pd.to_datetime(shares_outstanding['end'])
-Total_Assets['end'] = pd.to_datetime(Total_Assets['end'])
+    # Convert 'end' field to datetime
+    metric_data['end'] = pd.to_datetime(metric_data['end'])
 
-
-
-# Sort by date
-shares_outstanding = shares_outstanding.sort_values(by='end')
-assets_data_sorted = Total_Assets.sort_values(by='end')
+    # Sort the data by date
+    metric_data_sorted = metric_data.sort_values(by='end')
 
 # Plot the data
-import matplotlib.pyplot as plt
+    plt.figure(figsize=(10, 5))
+    plt.plot(metric_data_sorted['end'], metric_data_sorted['val'], marker='o', label=metric_key)
+    plt.title(f'{metric_key} Over Time')
+    plt.xlabel('Date')
+    plt.ylabel(f'{metric_key} (in USD)')
+    plt.legend()
+    plt.grid(True)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
 
-plt.plot(shares_outstanding['end'], shares_outstanding['val'])
-plt.xlabel('Date')
-plt.ylabel('Shares Outstanding')
-plt.title('Entity Common Stock Shares Outstanding Over Time')
-plt.show()
+# Now call this function for each metric
+extract_and_plot('GrossProfit')
+extract_and_plot('Dividends')
+extract_and_plot('Goodwill')
+extract_and_plot('Liabilities')
+extract_and_plot('Revenues')
+extract_and_plot('StockholdersEquity')
 
-plt.figure(figsize=(10,5))
-plt.plot(assets_data_sorted['end'], assets_data_sorted['val'], marker='o')
-plt.title('Total Assets Over Time')
-plt.xlabel('Date')
-plt.ylabel('Total Assets (in USD)')
-plt.grid(True)
-plt.xticks(rotation=45)  # Rotate the x-axis labels for better readability
-plt.tight_layout()  # Adjust the layout to fit the x-axis labels
-plt.show()
+# Repeat for other metrics by replacing 'GrossProfit' with the correct metric key
+
+def extract_and_plot(metric_key, save=False):
+    metric_path = ['facts', 'us-gaap', metric_key, 'units', 'USD']
+    metric_data = pd.json_normalize(data, record_path=metric_path)
+
+    # Convert 'end' field to datetime
+    metric_data['end'] = pd.to_datetime(metric_data['end'])
+
+    # Sort the data by date
+    metric_data_sorted = metric_data.sort_values(by='end')
+
+    # Plot the data
+    # ... [rest of your plotting code]
+
+    # Save the DataFrame to an Excel file if save is True
+    if save:
+        with pd.ExcelWriter('C:/Users/Maximilian Peter/Desktop/Masterarbeit/SEC_Data.xlsx', mode='a', engine='openpyxl', if_sheet_exists='replace') as writer:
+            metric_data_sorted.to_excel(writer, sheet_name=metric_key, index=False)
+
+
+# Now call this function for each metric and pass save=True
+extract_and_plot('GrossProfit', save=True)
+extract_and_plot('Dividends', save=True)
+extract_and_plot('Goodwill', save=True)
+extract_and_plot('Liabilities', save=True)
+extract_and_plot('Revenues', save=True)
+extract_and_plot('StockholdersEquity', save=True)
+# Repeat for other metrics by replacing 'GrossProfit' with the correct metric key
