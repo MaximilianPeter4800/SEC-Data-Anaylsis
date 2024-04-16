@@ -1,1 +1,45 @@
+import json
 
+# Replace 'file_path' with the path to your JSON file
+with open('C:/Users/Maximilian Peter/PycharmProjects/pythonProject/Test/CIK0000320193.json', 'r') as file:
+    data = json.load(file)
+
+print(data.keys())  # Prints the top-level keys
+
+import pandas as pd
+
+# This is assuming you want to extract the 'EntityCommonStockSharesOutstanding' part of the JSON
+shares_outstanding = pd.json_normalize(data,
+                                       record_path=['facts', 'dei', 'EntityCommonStockSharesOutstanding', 'units', 'shares'])
+
+Total_Assets = pd.json_normalize(data,
+                                       record_path=['facts', 'us-gaap', 'Assets', 'units', 'USD'])
+
+# Convert the 'end' field to datetime to allow time-series analysis
+shares_outstanding['end'] = pd.to_datetime(shares_outstanding['end'])
+Total_Assets['end'] = pd.to_datetime(Total_Assets['end'])
+
+
+
+# Sort by date
+shares_outstanding = shares_outstanding.sort_values(by='end')
+assets_data_sorted = Total_Assets.sort_values(by='end')
+
+# Plot the data
+import matplotlib.pyplot as plt
+
+plt.plot(shares_outstanding['end'], shares_outstanding['val'])
+plt.xlabel('Date')
+plt.ylabel('Shares Outstanding')
+plt.title('Entity Common Stock Shares Outstanding Over Time')
+plt.show()
+
+plt.figure(figsize=(10,5))
+plt.plot(assets_data_sorted['end'], assets_data_sorted['val'], marker='o')
+plt.title('Total Assets Over Time')
+plt.xlabel('Date')
+plt.ylabel('Total Assets (in USD)')
+plt.grid(True)
+plt.xticks(rotation=45)  # Rotate the x-axis labels for better readability
+plt.tight_layout()  # Adjust the layout to fit the x-axis labels
+plt.show()
